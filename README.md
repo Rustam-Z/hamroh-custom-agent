@@ -51,10 +51,13 @@ the prompts are read at boot — so those need a `docker compose restart`.
 | `memories/` | Committed memories the bot reads on demand | ✅ |
 | `plugins.json` | Tools + MCP capability surface | ✅ |
 | `default-reminders.json` | Scheduled reminders | ✅ |
-| `access.json.example` | Access policy template | ✅ |
+| `access.json` | Access policy (DM / group) | ✅ |
 | `.env` | Bot token, owner id, model, MCP secrets | ❌ secrets |
-| `access.json` | Live access policy (mutated by `/allow`, `/deny`) | ❌ runtime |
 | `data/` | SQLite, runtime memories, logs | ❌ runtime |
+
+`access.json` is tracked as the source of truth. Owner commands `/allow`,
+`/deny`, `/dmpolicy` edit it live on the host, so after using them commit the
+change to persist it — or just edit the file and `docker compose restart`.
 
 ## Setup
 
@@ -64,7 +67,6 @@ git clone --recurse-submodules https://github.com/Rustam-Z/luna && cd luna
 git submodule update --init
 
 cp .env.example .env               # set TELEGRAM_BOT_TOKEN, HAMROH_OWNER_ID, HAMROH_MODEL
-cp access.json.example access.json # live policy (gitignored; edited by /allow, /deny)
 
 docker compose up -d --build
 docker compose logs -f luna
