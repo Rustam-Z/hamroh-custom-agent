@@ -1,0 +1,5 @@
+# Keep the build context small. The Dockerfile only needs prompts/, skills/,
+# and framework/prompts/subagents.md.
+.git
+framework/.git
+data/

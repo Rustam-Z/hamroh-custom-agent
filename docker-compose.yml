@@ -1,12 +1,13 @@
 services:
   luna:
-    build: ./framework            # the hamroh submodule is the build context
+    build: .                    # luna/Dockerfile — FROM hamroh-base (built by `make`)
     env_file: .env
     restart: on-failure
     volumes:
+      # Single files and empty dirs are safe to mount — nothing baked to mask.
+      # prompts/ and skills/ are NOT mounted: they're baked in the Dockerfile
+      # so the framework's system.md, subagents.md, and built-in skills survive.
       - ./data:/app/data
-      - ./prompts:/app/prompts
-      - ./skills:/app/skills:ro
       - ./memories:/app/memories:ro
       - ./plugins.json:/app/plugins.json
       - ./access.json:/app/access.json

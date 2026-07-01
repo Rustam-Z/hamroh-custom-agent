@@ -3,61 +3,69 @@
 A persona instance of the [hamroh](https://github.com/Rustam-Z/hamroh)
 framework. hamroh is pinned as a git submodule under `framework/`; this repo
 owns only Luna's identity — persona, skills, memories, MCP config, reminders,
-and access. No framework code is forked, so `git pull` in the submodule keeps
-the engine up to date.
+and access. No framework code is forked, so bumping the submodule keeps the
+engine up to date.
 
 ## How it works
 
 Two layers:
 
 - **`framework/`** — the hamroh engine, pinned as a git submodule to one exact
-  commit. It ships the Docker image, the base system prompt, the built-in
-  skills, and all the Python. You never edit it.
-- **This repo** — Luna's identity as plain files. At `docker compose up`,
-  Docker builds the image from `framework/` (`build: ./framework`) and
-  **bind-mounts** these files over it, so the running container is the engine
-  wearing Luna's config.
+  commit. It ships the Dockerfile, the base system prompt, the built-in skills,
+  and all the Python. You never edit it.
+- **This repo** — Luna's identity. The build stacks it onto the framework:
 
 ```
-docker image (from framework/)          your files, mounted on top
-├── /app/hamroh          (engine)  ◄──  (untouched)
-├── /app/prompts/system.md         ◄──  ./prompts/  (system.md + project.md)
-├── /app/skills/         (built-in) ◄─  ./skills/
-├── /app/plugins.json              ◄──  ./plugins.json
-├── /app/access.json               ◄──  ./access.json
-├── /app/default-reminders.json    ◄──  ./default-reminders.json
-└── /app/memories/                 ◄──  ./memories/
+luna image = hamroh-base (built from framework/) + Luna baked on top
+├── /app/hamroh                engine + system.md + framework skills   (framework)
+├── /app/prompts/project.md    ← COPY prompts/project.md               (this repo)
+├── /app/prompts/subagents.md  ← COPY framework/prompts/subagents.md   (from submodule)
+└── /app/skills/<yours>        ← COPY skills/  (merges onto built-ins)  (this repo)
+
+mounted live at runtime (nothing baked there to hide):
+├── /app/plugins.json            ◄── ./plugins.json
+├── /app/access.json             ◄── ./access.json
+├── /app/default-reminders.json  ◄── ./default-reminders.json
+├── /app/memories/               ◄── ./memories/
+└── /app/data/                   ◄── ./data/
 ```
 
-**One gotcha worth knowing:** a directory bind-mount *masks* what the image
-baked at that path — it replaces, it doesn't merge. So `./prompts` and
-`./skills` hide the image's own `system.md` and built-in skills. That's why
-both are **seeded from the framework** into this repo (see
-[Updating the framework](#updating-the-framework)); drop those files and the
-bot loses its base prompt and playbooks. `memories/` has nothing baked, so its
-mount only adds.
+**Why `prompts/` and `skills/` are baked, not mounted.** A directory bind-mount
+*masks* whatever the image baked at that path — it replaces, it doesn't merge.
+The image fills `/app/prompts` (`system.md`) and `/app/skills` (the built-ins),
+so mounting your own folder there would hide them. A Dockerfile `COPY` merges
+instead: the framework's files survive and yours are added on top. Single files
+(`plugins.json`, `access.json`, `default-reminders.json`) and dirs the image
+leaves empty (`memories/`, `data/`) have nothing to mask, so those stay mounts
+— and stay live-editable.
 
-Config is read at different times: `access.json` is hot-reloaded, `memories/`
-is read on demand (live), while `plugins.json`, `default-reminders.json`, and
-the prompts are read at boot — so those need a `docker compose restart`.
+**When changes take effect:**
+
+| Change | Applies |
+|---|---|
+| `access.json` | live (hot-reloaded) |
+| `memories/` | live (read on demand) |
+| `plugins.json`, `default-reminders.json` | on `docker compose restart` |
+| `prompts/`, `skills/` (baked) | on rebuild — `make up` |
 
 ## What this repo owns
 
 | File / dir | Configures | Git-tracked |
 |---|---|---|
-| `prompts/project.md` | Persona / system-prompt overlay | ✅ |
-| `prompts/system.md` | Framework base prompt (seeded — required) | ✅ |
-| `skills/` | Framework playbooks (seeded) + Luna's own | ✅ |
+| `prompts/project.md` | Persona / system-prompt overlay (baked) | ✅ |
+| `skills/` | Luna's custom skills (baked; framework's are inherited) | ✅ |
 | `memories/` | Committed memories the bot reads on demand | ✅ |
 | `plugins.json` | Tools + MCP capability surface | ✅ |
 | `default-reminders.json` | Scheduled reminders | ✅ |
 | `access.json` | Access policy (DM / group) | ✅ |
+| `Dockerfile` | Bakes the above onto the framework image | ✅ |
 | `.env` | Bot token, owner id, model, MCP secrets | ❌ secrets |
 | `data/` | SQLite, runtime memories, logs | ❌ runtime |
 
-`access.json` is tracked as the source of truth. Owner commands `/allow`,
-`/deny`, `/dmpolicy` edit it live on the host, so after using them commit the
-change to persist it — or just edit the file and `docker compose restart`.
+`system.md`, `subagents.md`, and the built-in skills are **not** in this repo —
+they come from the framework (baked at build). `access.json` is the tracked
+source of truth; owner commands `/allow`, `/deny`, `/dmpolicy` edit it live, so
+after using them commit the change to persist it.
 
 ## Setup
 
@@ -66,38 +74,49 @@ git clone --recurse-submodules https://github.com/Rustam-Z/luna && cd luna
 # already cloned without --recurse-submodules?
 git submodule update --init
 
-cp .env.example .env               # set TELEGRAM_BOT_TOKEN, HAMROH_OWNER_ID, HAMROH_MODEL
+cp .env.example .env    # set TELEGRAM_BOT_TOKEN, HAMROH_OWNER_ID, HAMROH_MODEL
 
-docker compose up -d --build
-docker compose logs -f luna
+make up                 # build framework image + Luna image, start the bot
+make logs
 ```
+
+`make up` runs two steps — build the framework base (`hamroh-base`), then build
+Luna on top of it and start it. `docker compose up` alone won't work: Luna's
+`Dockerfile` needs `hamroh-base` to exist first.
 
 Claude Code auth is mounted from the host (`~/.claude`), so run `claude login`
 on the host once before starting.
 
 ## Customizing
 
-- **Persona** → edit `prompts/project.md`.
-- **MCPs** → in `plugins.json` set an MCP `"enabled": true` and add its secret
-  to `.env`. See `framework/docs/tools.md`.
-- **Reminders** → add entries to `default-reminders.json`.
-- **Skills** → drop a `skills/<name>/SKILL.md` folder.
-- **Memories** → add `memories/**/*.md` with `name` + `description` frontmatter.
+- **Persona** → edit `prompts/project.md`, then `make up` (baked).
+- **Skills** → drop a `skills/<name>/SKILL.md` folder, then `make up` (baked).
+- **MCPs** → in `plugins.json` set an MCP `"enabled": true`, add its secret to
+  `.env`, then `docker compose restart`. See `framework/docs/tools.md`.
+- **Reminders** → add entries to `default-reminders.json`, then restart.
+- **Memories** → add `memories/**/*.md` with `name` + `description` frontmatter
+  (live, no restart).
 
 ## Updating the framework
 
 ```bash
 cd framework && git pull origin main && cd ..
-cp framework/prompts/system.md prompts/system.md   # re-seed baked files
-cp -R framework/skills/. skills/
-git add framework prompts skills
-git commit -m "bump framework"
-docker compose up -d --build
+git add framework && git commit -m "bump framework"
+make up
 ```
+
+No files to re-copy — `system.md`, `subagents.md`, and the built-in skills are
+rebuilt from the bumped submodule automatically.
 
 ## Installing extra packages
 
-Need a system binary or extra Python dep? Don't edit `framework/`. Add a
-`Dockerfile` here that builds on top, point compose at it (`build: .` instead
-of `build: ./framework`), and use a two-step build. See
-`framework/docs/documentation.md#installing-extra-packages`.
+Need a system binary (ffmpeg, a font) or an extra Python dep for a custom tool?
+Add it to the `Dockerfile` — it already builds `FROM hamroh-base`:
+
+```dockerfile
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+RUN /app/.venv/bin/pip install --no-cache-dir yt-dlp
+```
+
+Then `make up`. Never edit `framework/` — it's the pinned submodule.
