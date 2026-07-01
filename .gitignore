@@ -1,0 +1,15 @@
+# Secrets — never commit
+.env
+.env.local
+
+# Runtime data (SQLite, runtime memories, logs, session id) — lives on the host
+data/
+
+# Access policy — mutated at runtime by /allow, /deny, /dmpolicy.
+# Track access.json.example instead; the live copy is host-local.
+access.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
