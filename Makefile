@@ -3,7 +3,7 @@ up:
 	docker compose up -d --build
 
 logs:
-	docker compose logs -f luna
+	docker compose logs -f agent
 
 down:
 	docker compose down

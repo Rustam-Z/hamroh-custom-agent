@@ -1,4 +1,4 @@
-# Luna = the hamroh framework image + Luna's identity baked on top.
+# Your agent image = the hamroh framework image + your identity baked on top.
 # The base image (hamroh-base) must be built first from the submodule:
 #   docker build -t hamroh-base ./framework
 # `make up` does that step for you, then builds this.
@@ -6,8 +6,8 @@ FROM hamroh-base
 
 # Bake every framework prompt file (system.md, subagents.md, and any the
 # framework adds later) straight from the pinned submodule — no cherry-picking
-# — then overlay Luna's persona on top. project.md isn't in the submodule
-# (gitignored there), so the framework copy never clobbers Luna's.
+# — then overlay your persona on top. project.md isn't in the submodule
+# (gitignored there), so the framework copy never clobbers yours.
 COPY framework/prompts/ /app/prompts/
 COPY prompts/project.md /app/prompts/project.md
 

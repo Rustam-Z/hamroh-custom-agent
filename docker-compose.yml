@@ -1,6 +1,6 @@
 services:
-  luna:
-    build: .                    # luna/Dockerfile — FROM hamroh-base (built by `make`)
+  agent:
+    build: .                    # your Dockerfile — FROM hamroh-base (built by `make`)
     env_file: .env
     restart: on-failure
     volumes:
