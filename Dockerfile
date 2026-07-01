@@ -4,14 +4,12 @@
 # `make up` does that step for you, then builds this.
 FROM hamroh-base
 
-# Persona overlay (this repo). COPY merges into the baked prompts dir, so the
-# framework's system.md stays intact — no masking, no seeding.
+# Bake every framework prompt file (system.md, subagents.md, and any the
+# framework adds later) straight from the pinned submodule — no cherry-picking
+# — then overlay Luna's persona on top. project.md isn't in the submodule
+# (gitignored there), so the framework copy never clobbers Luna's.
+COPY framework/prompts/ /app/prompts/
 COPY prompts/project.md /app/prompts/project.md
-
-# The subagents doc isn't baked into the base image; pull it straight from the
-# pinned framework source so it's always the matching version. Only read when
-# subagents are enabled in plugins.json.
-COPY framework/prompts/subagents.md /app/prompts/subagents.md
 
 # Custom skills merge onto the baked framework skills (none yet — drop
 # skills/<name>/SKILL.md folders here and rebuild).

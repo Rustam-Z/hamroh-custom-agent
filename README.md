@@ -17,9 +17,10 @@ Two layers:
 
 ```
 luna image = hamroh-base (built from framework/) + Luna baked on top
-├── /app/hamroh                engine + system.md + framework skills   (framework)
-├── /app/prompts/project.md    ← COPY prompts/project.md               (this repo)
-├── /app/prompts/subagents.md  ← COPY framework/prompts/subagents.md   (from submodule)
+├── /app/hamroh                engine + framework skills                (framework)
+├── /app/prompts/ (system.md,  ← COPY framework/prompts/                (from submodule)
+│      subagents.md, …)
+├── /app/prompts/project.md    ← COPY prompts/project.md                (this repo)
 └── /app/skills/<yours>        ← COPY skills/  (merges onto built-ins)  (this repo)
 
 mounted live at runtime (nothing baked there to hide):
