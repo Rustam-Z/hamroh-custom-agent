@@ -10,6 +10,40 @@ is forked, so bumping the submodule keeps the engine up to date.
 > then make it yours — set the persona in `prompts/project.md`, drop your
 > secrets into `.env`, and enable the MCPs you want in `plugins.json`.
 
+## Setup
+
+```bash
+git clone --recurse-submodules https://github.com/<you>/hamroh-custom-agent && cd hamroh-custom-agent
+# already cloned without --recurse-submodules?
+git submodule update --init
+
+cp .env.example .env    # set TELEGRAM_BOT_TOKEN, HAMROH_OWNER_ID, HAMROH_MODEL
+
+make up                 # build framework image + your agent image, start the bot
+make logs
+```
+
+`make up` runs two steps — build the framework base (`hamroh-base`), then build
+your agent on top of it and start it. `docker compose up` alone won't work: the
+`Dockerfile` needs `hamroh-base` to exist first.
+
+Claude Code auth is mounted from the host (`~/.claude`), so run `claude login`
+on the host once before starting.
+
+## Updating the framework
+
+The framework lives as a git submodule under `framework/`. To bump it to the
+latest upstream commit:
+
+```bash
+cd framework && git pull origin main && cd ..
+git add framework && git commit -m "bump framework"
+make up
+```
+
+No files to re-copy — `system.md`, `subagents.md`, and the built-in skills are
+rebuilt from the bumped submodule automatically.
+
 ## How it works
 
 Two layers:
@@ -72,26 +106,6 @@ they come from the framework (baked at build). `access.json` is the tracked
 source of truth; owner commands `/allow`, `/deny`, `/dmpolicy` edit it live, so
 after using them commit the change to persist it.
 
-## Setup
-
-```bash
-git clone --recurse-submodules https://github.com/<you>/hamroh-custom-agent && cd hamroh-custom-agent
-# already cloned without --recurse-submodules?
-git submodule update --init
-
-cp .env.example .env    # set TELEGRAM_BOT_TOKEN, HAMROH_OWNER_ID, HAMROH_MODEL
-
-make up                 # build framework image + your agent image, start the bot
-make logs
-```
-
-`make up` runs two steps — build the framework base (`hamroh-base`), then build
-your agent on top of it and start it. `docker compose up` alone won't work: the
-`Dockerfile` needs `hamroh-base` to exist first.
-
-Claude Code auth is mounted from the host (`~/.claude`), so run `claude login`
-on the host once before starting.
-
 ## Customizing
 
 - **Persona** → edit `prompts/project.md` (set the name — it ships as `MyBot`),
@@ -102,17 +116,6 @@ on the host once before starting.
 - **Reminders** → add entries to `default-reminders.json`, then restart.
 - **Memories** → add `memories/**/*.md` with `name` + `description` frontmatter
   (live, no restart).
-
-## Updating the framework
-
-```bash
-cd framework && git pull origin main && cd ..
-git add framework && git commit -m "bump framework"
-make up
-```
-
-No files to re-copy — `system.md`, `subagents.md`, and the built-in skills are
-rebuilt from the bumped submodule automatically.
 
 ## Installing extra packages
 
