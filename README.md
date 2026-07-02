@@ -17,7 +17,10 @@ git clone --recurse-submodules https://github.com/<you>/hamroh-custom-agent && c
 # already cloned without --recurse-submodules?
 git submodule update --init
 
-cp .env.example .env    # set TELEGRAM_BOT_TOKEN, HAMROH_OWNER_ID, HAMROH_MODEL
+claude setup-token      # opens a browser; prints a sk-ant-oat01-… token for .env
+
+cp .env.example .env    # set TELEGRAM_BOT_TOKEN, HAMROH_OWNER_ID,
+                        # CLAUDE_CODE_OAUTH_TOKEN, HAMROH_MODEL
 
 make up                 # build framework image + your agent image, start the bot
 make logs
@@ -27,8 +30,10 @@ make logs
 your agent on top of it and start it. `docker compose up` alone won't work: the
 `Dockerfile` needs `hamroh-base` to exist first.
 
-Claude Code auth is mounted from the host (`~/.claude`), so run `claude login`
-on the host once before starting.
+Claude Code auth comes from `CLAUDE_CODE_OAUTH_TOKEN` in `.env` — generate it
+once with `claude setup-token` (works with a Claude subscription or API) and
+paste the `sk-ant-oat01-…` token in. This is the login path on every OS; no
+`claude login` / Keychain / mounted credentials needed.
 
 ## Updating the framework
 

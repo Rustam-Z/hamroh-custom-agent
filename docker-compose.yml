@@ -12,6 +12,10 @@ services:
       - ./plugins.json:/app/plugins.json
       - ./access.json:/app/access.json
       - ./default-reminders.json:/app/default-reminders.json:ro
+      # Claude Code session files, so conversations resume across restarts.
+      # Auth is NOT taken from here — it comes from CLAUDE_CODE_OAUTH_TOKEN
+      # in .env (see .env.example). The env-var token takes precedence over
+      # any mounted credentials, so this works the same on Linux/macOS/Windows.
       - ~/.claude:/root/.claude
       - ~/.claude.json:/root/.claude.json
     working_dir: /app
