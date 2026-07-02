@@ -37,17 +37,38 @@ paste the `sk-ant-oat01-…` token in. This is the login path on every OS; no
 
 ## Updating the framework
 
-The framework lives as a git submodule under `framework/`. To bump it to the
-latest upstream commit:
+The framework lives as a git submodule under `framework/`, pinned to one exact
+commit (detached HEAD — it doesn't track a branch). Two situations:
+
+**You want the latest upstream framework.** Bump the pinned commit and commit the
+new pointer:
 
 ```bash
-cd framework && git pull origin main && cd ..
+git submodule update --remote framework   # fetch + check out latest upstream
 git add framework && git commit -m "bump framework"
 make up
 ```
 
-No files to re-copy — `system.md`, `subagents.md`, and the built-in skills are
-rebuilt from the bumped submodule automatically.
+`--remote` follows the submodule's tracked branch (the remote's default, `main`),
+so you never hardcode a branch or merge into the detached HEAD by hand.
+
+**You pulled this repo and the pointer moved** (someone else bumped it). A plain
+`git pull` updates the superproject but leaves `framework/` on the old commit.
+Sync it:
+
+```bash
+git submodule update --init --recursive   # --init is harmless if already initialized
+make up
+```
+
+To do this automatically on every pull, set it once per machine:
+
+```bash
+git config --global submodule.recurse true
+```
+
+Either way, no files to re-copy — `system.md`, `subagents.md`, and the built-in
+skills are rebuilt from the submodule at build time (`make up`).
 
 ## How it works
 
