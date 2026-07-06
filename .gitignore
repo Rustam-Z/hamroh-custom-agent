@@ -4,6 +4,7 @@
 
 # Runtime data (SQLite, runtime memories, logs, session id) — lives on the host
 data/
+memories/self/
 
 # Editors / OS
 .vscode/
