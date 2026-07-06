@@ -8,7 +8,9 @@ services:
       # prompts/ and skills/ are NOT mounted: they're baked in the Dockerfile
       # so the framework's system.md, subagents.md, and built-in skills survive.
       - ./data:/app/data
-      - ./memories:/app/memories:ro
+      # Read-write — the bot writes its own memories here; commit them
+      # with scripts/commit-memories.sh (make update does it for you).
+      - ./memories:/app/memories
       - ./plugins.json:/app/plugins.json
       - ./access.json:/app/access.json
       - ./default-reminders.json:/app/default-reminders.json:ro

@@ -50,7 +50,9 @@ make up
 ```
 
 `--remote` follows the submodule's tracked branch (the remote's default, `main`),
-so you never hardcode a branch or merge into the detached HEAD by hand.
+so you never hardcode a branch or merge into the detached HEAD by hand. On a
+deployed server, `make update` does this for you (see "Updating a deployed
+bot" below).
 
 **You pulled this repo and the pointer moved** (someone else bumped it). A plain
 `git pull` updates the superproject but leaves `framework/` on the old commit.
@@ -69,6 +71,30 @@ git config --global submodule.recurse true
 
 Either way, no files to re-copy — `system.md`, `subagents.md`, and the built-in
 skills are rebuilt from the submodule at build time (`make up`).
+
+## Updating a deployed bot
+
+On the server, update with one command:
+
+```bash
+make update   # commit the bot's new memories, pull, bump framework to latest, rebuild
+```
+
+The bot writes its memories into `memories/` but never commits them, and an
+uncommitted memory file that also changed upstream makes `git pull` abort.
+`make update` runs `scripts/commit-memories.sh` first, which commits and pushes
+those notes so the pull always goes through. Run the script by hand (or via
+cron) anytime you want the server's memories pushed sooner.
+
+`make update` also moves `framework/` to the latest upstream `main` and, if the
+pointer moved, commits and pushes the bump — so every update runs the newest
+framework without a separate bump step. Prefer a pinned, hand-picked framework
+commit? Drop `--remote framework` and the `git diff --quiet framework || …`
+line from the `update` target and bump manually as described above.
+
+If you and the bot ever edit the same memory file, git keeps both sides' lines
+(`merge=union` in `.gitattributes`) — no conflict markers to resolve by hand.
+Skim the merged file if you both touched the same lines.
 
 ## How it works
 
@@ -109,7 +135,7 @@ leaves empty (`memories/`, `data/`) have nothing to mask, so those stay mounts
 | Change | Applies |
 |---|---|
 | `access.json` | live (hot-reloaded) |
-| `memories/` | live (read on demand) |
+| `memories/` | live (read and written on demand) |
 | `plugins.json`, `default-reminders.json` | on `docker compose restart` |
 | `prompts/`, `skills/` (baked) | on rebuild — `make up` |
 
@@ -119,13 +145,13 @@ leaves empty (`memories/`, `data/`) have nothing to mask, so those stay mounts
 |---|---|---|
 | `prompts/project.md` | Persona / system-prompt overlay (baked) | ✅ |
 | `skills/` | Your custom skills (baked; framework's are inherited) | ✅ |
-| `memories/` | Committed memories the bot reads on demand | ✅ |
+| `memories/` | The bot's memory — it reads and writes here | ✅ |
 | `plugins.json` | Tools + MCP capability surface | ✅ |
 | `default-reminders.json` | Scheduled reminders | ✅ |
 | `access.json` | Access policy (DM / group) | ✅ |
 | `Dockerfile` | Bakes the above onto the framework image | ✅ |
 | `.env` | Bot token, owner id, model, MCP secrets | ❌ secrets |
-| `data/` | SQLite, runtime memories, logs | ❌ runtime |
+| `data/` | SQLite, session state, logs | ❌ runtime |
 
 `system.md`, `subagents.md`, and the built-in skills are **not** in this repo —
 they come from the framework (baked at build). `access.json` is the tracked
