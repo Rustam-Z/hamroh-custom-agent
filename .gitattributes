@@ -2,3 +2,7 @@
 # server) and by hand (locally). On conflict, keep both sides' lines
 # instead of emitting conflict markers.
 memories/**/*.md merge=union
+
+# project.md is append-mostly too (instruction_append on the server,
+# hand edits locally). Same deal: keep both sides on conflict.
+prompts/project.md merge=union

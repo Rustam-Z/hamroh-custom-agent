@@ -5,9 +5,13 @@ services:
     restart: on-failure
     volumes:
       # Single files and empty dirs are safe to mount — nothing baked to mask.
-      # prompts/ and skills/ are NOT mounted: they're baked in the Dockerfile
-      # so the framework's system.md, subagents.md, and built-in skills survive.
+      # prompts/ and skills/ are NOT mounted as whole dirs: they're baked in
+      # the Dockerfile so the framework's system.md, subagents.md, and
+      # built-in skills survive. project.md alone is mounted as a single file
+      # below, so the bot's instruction_append edits land in this checkout
+      # and survive rebuilds (commit-memories.sh commits them before pulls).
       - ./data:/app/data
+      - ./prompts/project.md:/app/prompts/project.md
       # Read-write — the bot writes its own memories here; commit them
       # with scripts/commit-memories.sh (make update does it for you).
       - ./memories:/app/memories

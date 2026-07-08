@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 #
-# Commit and push the bot's memory files (`memories/`).
+# Commit and push the bot's self-written state: memory files
+# (`memories/`) and its prompt overlay (`prompts/project.md`).
 #
-# The bot writes memories straight into this repo's checkout on the
-# server but never commits them. Uncommitted changes to a memory file
+# The bot writes these straight into this repo's checkout on the
+# server (memories/ and prompts/project.md are bind-mounted into the
+# container) but never commits them. Uncommitted changes to such a file
 # block `git pull` when the same file changed upstream — which breaks
 # updates. `make update` runs this right before `git pull` so the
 # checkout is always clean.
@@ -17,16 +19,16 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-git add memories/
+git add memories/ prompts/project.md
 
 if git diff --cached --quiet; then
-    echo "No memory changes to commit."
+    echo "No memory or prompt changes to commit."
     exit 0
 fi
 
 git -c user.name="hamroh" -c user.email="hamroh@localhost" \
-    commit -m "memories: sync from server [skip ci]"
+    commit -m "memories + project.md: sync from server [skip ci]"
 git pull --rebase
 git push
 
-echo "Memories committed and pushed."
+echo "Memories and project.md committed and pushed."
