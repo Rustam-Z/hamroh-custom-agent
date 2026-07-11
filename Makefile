@@ -3,10 +3,11 @@ up:
 	docker compose up -d --build
 
 update:
-	./scripts/commit-memories.sh
-	git pull
+	./scripts/commit-and-push.sh
+	git pull --rebase
 	git submodule update --init --remote framework
-	git diff --quiet framework || (git add framework && git commit -m "bump framework [skip ci]" && git push)
+	git diff --quiet framework || (git add framework && git commit -m "bump framework [skip ci]")
+	git push
 	$(MAKE) up
 
 logs:

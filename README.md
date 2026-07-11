@@ -82,7 +82,7 @@ make update   # commit the bot's new memories, pull, bump framework to latest, r
 
 The bot writes its memories into `memories/` but never commits them, and an
 uncommitted memory file that also changed upstream makes `git pull` abort.
-`make update` runs `scripts/commit-memories.sh` first, which commits and pushes
+`make update` runs `scripts/commit-and-push.sh` first, which commits and pushes
 those notes so the pull always goes through. Run the script by hand (or via
 cron) anytime you want the server's memories pushed sooner.
 
