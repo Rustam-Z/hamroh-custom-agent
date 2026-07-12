@@ -4,14 +4,19 @@ services:
     env_file: .env
     restart: on-failure
     volumes:
-      # Single files and empty dirs are safe to mount — nothing baked to mask.
-      # prompts/ and skills/ are NOT mounted as whole dirs: they're baked in
-      # the Dockerfile so the framework's system.md, subagents.md, and
-      # built-in skills survive. project.md alone is mounted as a single file
+      # prompts/ stays baked in the Dockerfile so the framework's system.md
+      # and subagents.md survive; only project.md is mounted as a single file
       # below, so the bot's instruction_append edits land in this checkout
       # and survive rebuilds (commit-and-push.sh commits them before pulls).
       - ./data:/app/data
       - ./prompts/project.md:/app/prompts/project.md
+      # Skill playbooks — bind-mounted read-write so host edits AND the bot's
+      # own write_skill land in this git-tracked checkout, live without a
+      # rebuild. The host skills/ tree now holds the framework built-ins
+      # (reminder-format, render-style, self-reflection) seeded alongside this
+      # bot's custom skills, so this whole-dir mount is the complete set the
+      # image expects — it masks the baked copy without dropping anything.
+      - ./skills:/app/skills
       # Read-write — the bot writes its own memories here; commit them
       # with scripts/commit-and-push.sh (make update does it for you).
       - ./memories:/app/memories
